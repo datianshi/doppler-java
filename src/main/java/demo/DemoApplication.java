@@ -1,53 +1,77 @@
 package demo;
 
+import demo.org.springframework.web.socket.client.standard.CustomWebSocketClient;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.Environment;
+import org.springframework.web.socket.WebSocketHandler;
+import org.springframework.web.socket.client.WebSocketClient;
 import org.springframework.web.socket.client.WebSocketConnectionManager;
-import org.springframework.web.socket.client.standard.StandardWebSocketClient;
-import org.springframework.web.socket.config.annotation.EnableWebSocket;
-import org.springframework.web.socket.sockjs.client.RestTemplateXhrTransport;
-import org.springframework.web.socket.sockjs.client.SockJsClient;
-import org.springframework.web.socket.sockjs.client.Transport;
-import org.springframework.web.socket.sockjs.client.WebSocketTransport;
 
-import java.util.ArrayList;
-import java.util.List;
+import javax.validation.Valid;
 
 @SpringBootApplication
-@EnableAutoConfiguration
-@EnableWebSocket
-public class DemoApplication {
-
-    public static void main(String[] args) {
-        SpringApplication.run(ClientConfiguration.class, args);
-
+public class DemoApplication implements CommandLineRunner{
+    protected Log logger = LogFactory.getLog(DemoApplication.class);
+    
+    public static void main(String[] args){
+        SpringApplication application = new SpringApplication(DemoApplication.class);
+        application.setAddCommandLineProperties(true);
+        application.run(args);
     }
+    
+    @Autowired
+    WebSocketFactory factory;
 
-    @Configuration
-    @EnableAutoConfiguration
-    @EnableWebSocket
-    static class ClientConfiguration implements CommandLineRunner {
+    @Value("${endpoint}")
+    String endpoint;
 
 
-
-        @Override
-        public void run(String... strings) throws Exception {
-            while (true){
-                Thread.sleep(1000);
-            }
+        @Bean
+        public WebSocketClient webSocketClient(PropConfiguration propConfiguration) {
+            return new CustomWebSocketClient(false);
         }
 
         @Bean
-        public WebSocketConnectionManager wsConnectionManager() {
-
-            WebSocketConnectionManager cm = new WebSocketConnectionManager(new StandardWebSocketClient(), new LogWebSocketHandler(), "");
-            cm.setAutoStartup(true);
-
-            return cm;
+        public WebSocketHandler webSocketHandler() {
+            return new LogWebSocketHandler();
         }
-    }
+
+
+        public void run(String... args) throws Exception {
+                    WebSocketConnectionManager manager = null;
+
+            if(endpoint.equals("firehose")){
+                manager = factory.getWebSocketManager((String url) -> url + "/firehose/firehose-a");
+                manager.start();
+            }
+            else{
+                usage();
+            }
+            
+//        System.out.println("Hello world" + configuration.getUrl());
+//        WebSocketConnectionManager manager = null;
+//        if(args.length == 1 && args[0].equals("firehose")){
+//            manager = factory.getWebSocketManager((String url) -> url + "/firehose/firehose-a");
+//        }
+//        else if(args.length == 2 && args[0].equals("app")){
+//            manager = factory.getWebSocketManager((String url) -> url + "/firehose/firehose-");
+//        }
+//        else{
+//            usage();
+//        }
+//        manager.start();
+        }
+
+        private void usage() {
+            System.out.println("[Usage]: \njava demo.DemoApplication firehose\njava demo.DemoApplication app [instanceId]");
+            System.exit(1);
+        }
+
 }

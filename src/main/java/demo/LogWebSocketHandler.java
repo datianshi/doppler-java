@@ -1,24 +1,22 @@
 package demo;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.springframework.web.socket.TextMessage;
+import com.googlecode.protobuf.format.JsonFormat;
+import events.EnvelopeOuterClass;
+import org.springframework.web.socket.BinaryMessage;
 import org.springframework.web.socket.WebSocketSession;
-import org.springframework.web.socket.handler.TextWebSocketHandler;
+import org.springframework.web.socket.handler.BinaryWebSocketHandler;
 
-/**
- * Created by dings on 2/10/15.
- */
-public class LogWebSocketHandler extends TextWebSocketHandler {
+import java.io.OutputStreamWriter;
 
-    protected Log logger = LogFactory.getLog(LogWebSocketHandler.class);
 
+public class LogWebSocketHandler extends BinaryWebSocketHandler {
+
+    
 
     @Override
-    public void handleTextMessage(WebSocketSession session, TextMessage message)
-            throws Exception {
-        this.logger.info("Received: " + message);
-        session.close();
+    protected void handleBinaryMessage(WebSocketSession session, BinaryMessage message) throws Exception {
+        EnvelopeOuterClass.Envelope envelope = EnvelopeOuterClass.Envelope.parseFrom(message.getPayload().array());
+        System.out.println(JsonFormat.printToString(envelope));
+//        JsonFormat.print(envelope, new OutputStreamWriter(System.out));
     }
-
 }
