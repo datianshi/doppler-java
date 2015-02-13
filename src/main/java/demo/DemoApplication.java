@@ -9,12 +9,13 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
-import org.springframework.core.env.Environment;
 import org.springframework.web.socket.WebSocketHandler;
+import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.client.WebSocketClient;
 import org.springframework.web.socket.client.WebSocketConnectionManager;
 
-import javax.validation.Valid;
+import java.io.IOException;
+import java.util.function.Function;
 
 @SpringBootApplication
 public class DemoApplication implements CommandLineRunner {
@@ -27,7 +28,7 @@ public class DemoApplication implements CommandLineRunner {
     }
 
     @Autowired
-    WebSocketFactory factory;
+    WebSocketWrapper websocket;
 
     @Value("${endpoint}")
     String endpoint;
@@ -46,18 +47,46 @@ public class DemoApplication implements CommandLineRunner {
         return new LogWebSocketHandler();
     }
 
+    
+    public void run(String... args) throws InterruptedException {
+        Thread t = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                WebSocketSession session = websocket.openConnection(getUrl(endpoint));
+                Runtime.getRuntime().addShutdownHook(new Thread(){
+                    public void run(){
+                        try {
+                            websocket.stopConnection();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                });
+                        while(session.isOpen()){
+                            try {
+                                Thread.sleep(10000);
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
 
-    public void run(String... args) throws Exception {
-        WebSocketConnectionManager manager = null;
-
-        if (endpoint.equals("firehose")) {
-            manager = factory.getWebSocketManager((String url) -> url + "/firehose/firehose-a");
-            manager.start();
-        } else if (endpoint.equals("app")) {
-            manager = factory.getWebSocketManager((String url) -> url + "/apps/" + appEndpoint.getGuid() + "/" + appEndpoint.getType());
-        }
-        manager.start();
+                        }
+            }
+        });
+        t.start();
+        
     }
+    
+    private Function<String, String> getUrl(String endpoint){
+        if(endpoint.equals("firehose")){
+            return (String url) -> url + "/firehose/firehose-a";
+        }
+        else if(endpoint.equals("app")){
+            return (String url) -> url + "/apps/" + appEndpoint.getGuid() + "/" + appEndpoint.getType();
+        }
+        return null;
+    }
+    
+    
 
     private void usage() {
         System.out.println("[Usage]: \njava demo.DemoApplication firehose\njava demo.DemoApplication app [instanceId]");
