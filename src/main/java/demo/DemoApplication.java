@@ -17,61 +17,51 @@ import org.springframework.web.socket.client.WebSocketConnectionManager;
 import javax.validation.Valid;
 
 @SpringBootApplication
-public class DemoApplication implements CommandLineRunner{
+public class DemoApplication implements CommandLineRunner {
     protected Log logger = LogFactory.getLog(DemoApplication.class);
-    
-    public static void main(String[] args){
+
+    public static void main(String[] args) {
         SpringApplication application = new SpringApplication(DemoApplication.class);
         application.setAddCommandLineProperties(true);
         application.run(args);
     }
-    
+
     @Autowired
     WebSocketFactory factory;
 
     @Value("${endpoint}")
     String endpoint;
+    
+    @Autowired
+    AppEndpoint appEndpoint;
 
 
-        @Bean
-        public WebSocketClient webSocketClient(PropConfiguration propConfiguration) {
-            return new CustomWebSocketClient(false);
+    @Bean
+    public WebSocketClient webSocketClient(PropConfiguration propConfiguration) {
+        return new CustomWebSocketClient(false);
+    }
+
+    @Bean
+    public WebSocketHandler webSocketHandler() {
+        return new LogWebSocketHandler();
+    }
+
+
+    public void run(String... args) throws Exception {
+        WebSocketConnectionManager manager = null;
+
+        if (endpoint.equals("firehose")) {
+            manager = factory.getWebSocketManager((String url) -> url + "/firehose/firehose-a");
+            manager.start();
+        } else if (endpoint.equals("app")) {
+            manager = factory.getWebSocketManager((String url) -> url + "/apps/" + appEndpoint.getGuid() + "/" + appEndpoint.getType());
         }
+        manager.start();
+    }
 
-        @Bean
-        public WebSocketHandler webSocketHandler() {
-            return new LogWebSocketHandler();
-        }
-
-
-        public void run(String... args) throws Exception {
-                    WebSocketConnectionManager manager = null;
-
-            if(endpoint.equals("firehose")){
-                manager = factory.getWebSocketManager((String url) -> url + "/firehose/firehose-a");
-                manager.start();
-            }
-            else{
-                usage();
-            }
-            
-//        System.out.println("Hello world" + configuration.getUrl());
-//        WebSocketConnectionManager manager = null;
-//        if(args.length == 1 && args[0].equals("firehose")){
-//            manager = factory.getWebSocketManager((String url) -> url + "/firehose/firehose-a");
-//        }
-//        else if(args.length == 2 && args[0].equals("app")){
-//            manager = factory.getWebSocketManager((String url) -> url + "/firehose/firehose-");
-//        }
-//        else{
-//            usage();
-//        }
-//        manager.start();
-        }
-
-        private void usage() {
-            System.out.println("[Usage]: \njava demo.DemoApplication firehose\njava demo.DemoApplication app [instanceId]");
-            System.exit(1);
-        }
+    private void usage() {
+        System.out.println("[Usage]: \njava demo.DemoApplication firehose\njava demo.DemoApplication app [instanceId]");
+        System.exit(1);
+    }
 
 }

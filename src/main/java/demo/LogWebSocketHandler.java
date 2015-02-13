@@ -6,8 +6,6 @@ import org.springframework.web.socket.BinaryMessage;
 import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.BinaryWebSocketHandler;
 
-import java.io.OutputStreamWriter;
-
 
 public class LogWebSocketHandler extends BinaryWebSocketHandler {
 
@@ -17,6 +15,5 @@ public class LogWebSocketHandler extends BinaryWebSocketHandler {
     protected void handleBinaryMessage(WebSocketSession session, BinaryMessage message) throws Exception {
         EnvelopeOuterClass.Envelope envelope = EnvelopeOuterClass.Envelope.parseFrom(message.getPayload().array());
         System.out.println(JsonFormat.printToString(envelope));
-//        JsonFormat.print(envelope, new OutputStreamWriter(System.out));
     }
 }

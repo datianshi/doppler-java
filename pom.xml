@@ -48,6 +48,11 @@
 			<artifactId>protobuf-java</artifactId>
 			<version>2.6.1</version>
 		</dependency>
+		<dependency>
+			<groupId>org.codehaus.jackson</groupId>
+			<artifactId>jackson-smile</artifactId>
+			<version>1.9.13</version>
+		</dependency>
 		<!--<dependency>-->
 			<!--<groupId>org.apache.tomcat</groupId>-->
 			<!--<artifactId>tomcat-websocket</artifactId>-->
